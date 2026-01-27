@@ -13,13 +13,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(500).json({ error: 'Missing OpenAI API Key on server' });
     }
 
-    const { messages } = req.body;
+    const { messages, temperature, max_tokens } = req.body;
 
     if (!messages) {
         return res.status(400).json({ error: 'Missing messages' });
     }
 
     try {
+        const safeTemperature =
+            typeof temperature === 'number' && Number.isFinite(temperature)
+                ? Math.min(1.2, Math.max(0, temperature))
+                : 0.7;
+
+        const safeMaxTokens =
+            typeof max_tokens === 'number' && Number.isFinite(max_tokens)
+                ? Math.min(250, Math.max(1, Math.floor(max_tokens)))
+                : 150;
+
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -29,8 +39,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             body: JSON.stringify({
                 model: "gpt-3.5-turbo",
                 messages: messages,
-                temperature: 0.7,
-                max_tokens: 150
+                temperature: safeTemperature,
+                max_tokens: safeMaxTokens
             })
         });
 

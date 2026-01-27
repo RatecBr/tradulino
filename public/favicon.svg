@@ -13,8 +13,17 @@
    > 
      <line x1="156" y1="140" x2="356" y2="140" /> 
      <line x1="256" y1="140" x2="256" y2="300" /> 
+     <path d="M236 360 L256 380 L276 360" /> 
+   </g> 
+ 
+   <g 
+     fill="none" 
+     stroke="#0FB9B1" 
+     stroke-width="36" 
+     stroke-linecap="round" 
+     stroke-linejoin="round" 
+   > 
      <path d="M140 236 L120 256 L140 276" /> 
      <path d="M372 236 L392 256 L372 276" /> 
-     <path d="M236 360 L256 380 L276 360" /> 
    </g> 
  </svg>

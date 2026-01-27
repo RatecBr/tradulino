@@ -11,8 +11,15 @@ export const useAIResponse = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const resetSuggestions = useCallback(() => {
+        setSuggestions([]);
+        setIsLoading(false);
+        setError(null);
+    }, []);
+
     const generateSuggestions = useCallback(async (currentText: string, history: any[]) => {
-        if (!currentText || currentText.length < 5) return;
+        // Reduced threshold for context generation
+        if (!currentText || currentText.length < 2) return;
 
         setIsLoading(true);
         setError(null);
@@ -33,20 +40,28 @@ export const useAIResponse = () => {
             const messages = [
                 {
                     role: "system",
-                    content: `You are a highly intelligent conversation coach.
+                    content: `You are a conversation coach.
                     Current Real-time Context: Today is ${dateContext}, ${timeContext}.
                     
                     TASK:
                     1. Analyze the Conversation History below.
-                    2. Suggest 2 distinct, VERY SHORT, natural responses for the User to say NEXT.
-                    3. Ensure suggestions follow the established context.
+                    2. Suggest 2 distinct, natural responses for the User to say NEXT.
+                    3. If the conversation seems to have ended or there is a lull, make ONE of the 2 suggestions a NEW topic (e.g., "What's your favorite hobby?", "Have you traveled recently?").
+                    4. Ensure suggestions follow the established context.
+
+                    CONSTRAINTS (IMPORTANT):
+                    - Each EN suggestion: 1 sentence, max 9 words, max 60 characters.
+                    - Each PT suggestion: 1 sentence, max 9 words, max 70 characters.
+                    - Prefer short, natural, spoken replies. No explanations.
+                    - Avoid multiple questions; at most 1 short question total across both suggestions.
+                    - No emojis. No quotes around the sentence text.
                     
                     FORMAT:
                     You must return a raw JSON array. No markdown formatting.
                     Example:
                     [
                         {"en": "Where to?", "pt": "Para onde?"},
-                        {"en": "I agree.", "pt": "Eu concordo."}
+                        {"en": "What do you do for fun?", "pt": "O que você faz para se divertir?"}
                     ]
                     
                     Strictly valid JSON only.`
@@ -62,7 +77,7 @@ export const useAIResponse = () => {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ messages })
+                body: JSON.stringify({ messages, temperature: 0.4, max_tokens: 90 })
             });
 
             if (!response.ok) throw new Error('API Request Failed');
@@ -105,5 +120,5 @@ export const useAIResponse = () => {
         }
     }, []);
 
-    return { suggestions, isLoading, error, generateSuggestions };
+    return { suggestions, isLoading, error, generateSuggestions, resetSuggestions };
 };

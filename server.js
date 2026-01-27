@@ -41,10 +41,21 @@ async function callOpenAI(messages, temperature = 0.7, max_tokens = 150) {
 // /api/chat endpoint
 app.post('/api/chat', async (req, res) => {
     try {
-        const { messages } = req.body;
+        const { messages, temperature, max_tokens } = req.body;
         if (!apiKey) return res.status(500).json({ error: 'Missing API Key' });
+        if (!messages) return res.status(400).json({ error: 'Missing messages' });
 
-        const data = await callOpenAI(messages);
+        const safeTemperature =
+            typeof temperature === 'number' && Number.isFinite(temperature)
+                ? Math.min(1.2, Math.max(0, temperature))
+                : 0.7;
+
+        const safeMaxTokens =
+            typeof max_tokens === 'number' && Number.isFinite(max_tokens)
+                ? Math.min(250, Math.max(1, Math.floor(max_tokens)))
+                : 150;
+
+        const data = await callOpenAI(messages, safeTemperature, safeMaxTokens);
         res.json(data);
     } catch (error) {
         console.error("Chat Error:", error);
@@ -87,15 +98,32 @@ app.post('/api/translate', async (req, res) => {
 // /api/transcribe endpoint
 app.post('/api/transcribe', async (req, res) => {
     try {
-        const { audio } = req.body;
+        const { audio, mimeType } = req.body;
         if (!apiKey) return res.status(500).json({ error: 'Missing API Key' });
 
         const buffer = Buffer.from(audio, 'base64');
+        const safeMimeTypeRaw = typeof mimeType === 'string' && mimeType.length > 0 ? mimeType : 'audio/webm';
+        const safeMimeType = safeMimeTypeRaw.split(';')[0].trim() || 'audio/webm';
+        const magicHex = buffer.subarray(0, 4).toString('hex');
+        const detected =
+            magicHex === '1a45dfa3' ? { filename: 'audio.webm', contentType: 'audio/webm' } :
+            magicHex === '4f676753' ? { filename: 'audio.ogg', contentType: 'audio/ogg' } :
+            magicHex === '52494646' ? { filename: 'audio.wav', contentType: 'audio/wav' } :
+            null;
+        const filename =
+            safeMimeType.includes('ogg') ? 'audio.ogg' :
+            safeMimeType.includes('webm') ? 'audio.webm' :
+            safeMimeType.includes('wav') ? 'audio.wav' :
+            safeMimeType.includes('mpeg') ? 'audio.mp3' :
+            'audio.webm';
         const formData = new FormData();
-        formData.append('file', buffer, { filename: 'audio.webm', contentType: 'audio/webm' });
+        const finalFilename = detected?.filename ?? filename;
+        const finalContentType = detected?.contentType ?? safeMimeType;
+        console.log("Transcribe upload:", { bytes: buffer.length, mimeType: safeMimeType, magicHex, finalContentType, finalFilename });
+        formData.append('file', buffer, { filename: finalFilename, contentType: finalContentType });
         formData.append('model', 'whisper-1');
         formData.append('language', 'en');
-        formData.append('prompt', 'Transcribe this English conversation. If there is silence, return nothing.');
+        formData.append('prompt', 'This is a conversation in English. If you hear silence or background noise, do not transcribe anything. Ignore phrases like "Thank you for watching" or video subtitles.');
 
         const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
             method: 'POST',

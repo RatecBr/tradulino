@@ -7,23 +7,17 @@ export const Logo: React.FC<{ className?: string }> = ({ className }) => (
         className={className}
         preserveAspectRatio="xMinYMid meet"
     >
-        {/* Ícone fornecido pelo usuário - Versão final com Chevrons */}
-        <g fill="none" stroke="#0A7CFF" strokeWidth="36" strokeLinecap="round" strokeLinejoin="round"> 
-            {/* Letra T */} 
-            <line x1="156" y1="140" x2="356" y2="140" /> 
-            <line x1="256" y1="140" x2="256" y2="300" /> 
-        
-            {/* Chevron esquerdo (rotacionado para a esquerda) */} 
-            <path d="M140 236 L120 256 L140 276" /> 
-        
-            {/* Chevron direito (rotacionado para a direita) */} 
-            <path d="M372 236 L392 256 L372 276" /> 
-        
-            {/* Chevron inferior (para baixo) */} 
-            <path d="M236 360 L256 380 L276 360" /> 
+        <g fill="none" stroke="#0A7CFF" strokeWidth="36" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="156" y1="140" x2="356" y2="140" />
+            <line x1="256" y1="140" x2="256" y2="300" />
+            <path d="M236 360 L256 380 L276 360" />
         </g>
 
-        {/* Texto TRADULINO - Cor alterada para #0A7CFF para combinar com a logo */}
+        <g fill="none" stroke="#0FB9B1" strokeWidth="36" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M140 236 L120 256 L140 276" />
+            <path d="M372 236 L392 256 L372 276" />
+        </g>
+
         <text 
             x="500" 
             y="300"

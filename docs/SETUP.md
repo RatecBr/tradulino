@@ -29,6 +29,8 @@ Este comando utiliza o pacote `concurrently` para iniciar:
 - **Vite** (Frontend) na porta `5173`.
 - **Node Server** (Backend) na porta `8080`.
 
+O Vite faz proxy automático de `/api/*` para `http://localhost:8080` (veja `vite.config.ts`).
+
 ---
 
 ## ☁️ Deploy em Produção (Vercel)
@@ -55,6 +57,13 @@ A Vercel detectará automaticamente o Vite. O arquivo `vercel.json` na raiz já 
 - **Nunca** publique seu arquivo `.env` ou inclua chaves de API diretamente no código-fonte.
 - O `.gitignore` já está configurado para ignorar o arquivo `.env`.
 - No Tradulino, as chamadas para a OpenAI são feitas via backend (`/api`), o que mantém sua chave protegida e oculta do navegador do usuário final.
+
+---
+
+## 🗄️ Supabase (opcional)
+Se você decidir adicionar persistência (histórico, usuários, preferências), Supabase é uma boa opção.
+
+Importante: Supabase não resolve problemas de captura de áudio/transcrição; ele ajuda na camada de dados.
 
 ---
 

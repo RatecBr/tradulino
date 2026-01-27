@@ -8,11 +8,14 @@ O Tradulino é uma ferramenta de IA projetada para ajudar você a manter convers
 
 ## ✨ Funcionalidades Principais
 
-*   **🎙️ Reconhecimento Híbrido**: Funciona nativamente no Chrome/Edge e via OpenAI Whisper em outros navegadores (Brave, Firefox, Safari, Mobile).
-*   **🧠 Sugestões Contextuais**: Receba sugestões de respostas naturais baseadas no que está sendo dito.
-*   **🇧🇷 Tradução em Tempo Real**: Entenda instantaneamente o contexto da conversa com traduções para o Português (Brasil).
-*   **🎯 Feedback de Pronúncia**: O sistema analisa sua fala e destaca em vermelho palavras que precisam de melhoria na pronúncia.
-*   **🏠 Landing Page Moderna**: Apresentação profissional do sistema com guia de uso.
+*   **🗣️ 2 Modos**:
+    *   **Conversa real (2 pessoas)**: o app não “conversa sozinho”; ele transcreve/ traduz e sugere o que VOCÊ pode responder.
+    *   **Treinar com o Lino**: o app pode responder automaticamente (opcional) para praticar.
+*   **🎙️ Voz com Push-to-talk (FALAR)**: o app só grava/transcreve enquanto você segura **FALAR** (evita “inventar” texto com ruído/eco).
+*   **🧠 Sugestões Contextuais (2 opções)**: sugestões curtas e objetivas para não ocupar espaço no mobile.
+*   **🇧🇷 Tradução em Tempo Real**: traduz o texto transcrito para Português (Brasil).
+*   **✅ Correção de frase (comparação)**: destaca o quanto sua fala ficou próxima da sugestão anterior (não é análise de pronúncia).
+*   **📱 Mobile-first**: layout otimizado para celular/tablet (mic discreto, botão FALAR grande).
 
 ---
 
@@ -65,8 +68,8 @@ Para uma imersão mais profunda no Tradulino, consulte nossos guias detalhados:
 
 *   **Frontend**: React, Vite, TypeScript, TailwindCSS, Framer Motion.
 *   **Backend**: Node.js, Express (Local) / Vercel Serverless Functions (Nuvem).
-*   **IA**: OpenAI (GPT-3.5 Turbo & Whisper-1).
-*   **Voz**: Web Speech API.
+*   **IA**: OpenAI (Chat + Whisper).
+*   **Voz**: MediaRecorder + transcrição via Whisper (Modo Universal).
 
 ---
 

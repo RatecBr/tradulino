@@ -14,7 +14,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     try {
-        const { audio } = req.body; // Expecting base64 string
+        const { audio, mimeType } = req.body; // Expecting base64 string
         if (!audio) {
             return res.status(400).json({ error: 'No audio data provided' });
         }
@@ -24,10 +24,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         // Create FormData for OpenAI
         const formData = new FormData();
-        formData.append('file', buffer, { filename: 'recording.webm', contentType: 'audio/webm' });
+        const safeMimeType = typeof mimeType === 'string' && mimeType.length > 0 ? mimeType : 'audio/webm';
+        const filename =
+            safeMimeType.includes('ogg') ? 'recording.ogg' :
+            safeMimeType.includes('webm') ? 'recording.webm' :
+            safeMimeType.includes('wav') ? 'recording.wav' :
+            safeMimeType.includes('mpeg') ? 'recording.mp3' :
+            'recording.webm';
+        formData.append('file', buffer, { filename, contentType: safeMimeType });
         formData.append('model', 'whisper-1');
         formData.append('language', 'en'); 
-        formData.append('prompt', 'Transcribe this English conversation. If there is silence, return nothing.');
+        formData.append('prompt', 'This is a conversation in English. If you hear silence or background noise, do not transcribe anything. Ignore phrases like "Thank you for watching" or video subtitles.');
 
         // Call Whisper API
         const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {

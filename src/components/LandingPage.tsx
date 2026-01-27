@@ -2,7 +2,7 @@ import React from 'react';
 import { Logo } from './Logo';
 
 interface LandingPageProps {
-  onStart: () => void;
+  onStart: (mode: 'live' | 'practice') => void;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
@@ -16,12 +16,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
         {/* Navbar */}
         <nav className="max-w-[1100px] mx-auto px-5 py-8 flex justify-between items-center">
           <Logo className="w-64 md:w-80" />
-          <button 
-            onClick={onStart}
-            className="hidden md:block bg-[#0A7CFF] text-white px-6 py-2.5 rounded-lg font-semibold transition-all hover:translate-y-[-2px] hover:shadow-[0_10px_30px_rgba(10,124,255,0.3)] active:scale-95"
-          >
-            Começar agora
-          </button>
+          <div className="hidden md:flex items-center gap-3">
+            <button
+              onClick={() => onStart('live')}
+              className="bg-[#0A7CFF] text-white px-5 py-2.5 rounded-lg font-semibold transition-all hover:translate-y-[-2px] hover:shadow-[0_10px_30px_rgba(10,124,255,0.3)] active:scale-95"
+            >
+              Conversa real
+            </button>
+            <button
+              onClick={() => onStart('practice')}
+              className="bg-[#0FB9B1] text-white px-5 py-2.5 rounded-lg font-semibold transition-all hover:translate-y-[-2px] hover:shadow-[0_10px_30px_rgba(15,185,177,0.35)] active:scale-95"
+            >
+              Treinar com o Lino
+            </button>
+          </div>
         </nav>
 
         <header className="max-w-[1100px] mx-auto px-5 py-20 md:py-32 grid grid-cols-1 gap-10">
@@ -38,10 +46,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
 
             <div className="flex flex-wrap gap-4">
               <button 
-                onClick={onStart}
+                onClick={() => onStart('live')}
                 className="bg-[#0A7CFF] text-white px-10 py-5 rounded-xl text-lg font-bold transition-all hover:translate-y-[-2px] hover:shadow-[0_10px_30px_rgba(10,124,255,0.4)] active:scale-95"
               >
-                Começar agora
+                Conversa real
+              </button>
+              <button
+                onClick={() => onStart('practice')}
+                className="bg-[#0FB9B1] text-white px-10 py-5 rounded-xl text-lg font-bold transition-all hover:translate-y-[-2px] hover:shadow-[0_10px_30px_rgba(15,185,177,0.35)] active:scale-95"
+              >
+                Treinar com o Lino
               </button>
               <a 
                 href="#como-funciona"
@@ -135,7 +149,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
               </p>
 
               <button 
-                onClick={onStart}
+                onClick={() => onStart('live')}
                 className="bg-white text-[#0A7CFF] px-12 py-5 rounded-xl text-xl font-extrabold transition-all hover:translate-y-[-2px] hover:shadow-2xl active:scale-95"
               >
                 Quero usar o TRADULINO

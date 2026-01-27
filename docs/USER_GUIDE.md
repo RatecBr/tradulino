@@ -5,42 +5,60 @@ Bem-vindo ao **Tradulino**! Este guia ajudará você a entender como utilizar to
 ---
 
 ## 1. Começando
-Ao abrir o Tradulino, você será recebido pela **Landing Page**. Clique em **"Começar agora"** para entrar na interface de assistência em tempo real.
+Ao abrir o Tradulino, você será recebido pela **Landing Page**. Escolha um modo e clique em **Começar**:
+
+- **Conversa real**: pensado para acompanhar uma conversa entre duas pessoas (você + outra pessoa).
+- **Treinar com o Lino**: pensado para praticar; o Lino pode responder automaticamente (opcional).
 
 ## 2. Interface Principal
 A interface é dividida em três partes principais:
 
-### 🎙️ Microfone e Escuta
-No canto inferior direito, você encontrará o botão de **Microfone**.
-- **Verde**: O sistema está ouvindo.
-- **Vermelho (Pulsante)**: Gravação ativa.
-- **Fallback Automático**: Se você não estiver no Chrome, o sistema usará o **Modo Universal**, enviando pequenos pedaços de áudio para transcrição via nuvem.
+### 🎙️ FALAR (Push-to-talk)
+O Tradulino grava/transcreve **somente enquanto você segura o botão FALAR**.
+
+Isso reduz transcrições falsas (eco/ruído) e deixa o app previsível tanto no mobile quanto no desktop.
 
 ### 💬 Painel de Transcrição
 Localizado à esquerda, este painel mostra o que foi dito na conversa.
 - **Suas falas (User)**: Aparecem de um lado.
 - **Falas do outro (Other)**: Aparecem do outro lado.
 - **Tradução**: Abaixo de cada frase em inglês, você verá a tradução instantânea para o português.
+- **Correção manual (somente sua fala)**: você pode tocar/clicar no seu balão para “corrigir” (ajuste do lado/falante).
 
 ### 🧠 Doca de Sugestões
 À direita, o Tradulino sugere o que você pode dizer a seguir.
-- As sugestões são baseadas em todo o contexto da conversa.
-- Você pode ler essas sugestões para praticar.
+- As sugestões são baseadas no contexto recente da conversa.
+- Por padrão, aparecem **2 sugestões** (para não atrapalhar o botão FALAR no mobile).
 
 ---
 
-## 3. Praticando a Pronúncia
-O Tradulino ajuda você a falar melhor!
-- Tente repetir as frases sugeridas em voz alta enquanto o microfone estiver ativo.
-- Se o sistema reconhecer que você falou as palavras corretamente, elas brilharão em **Amarelo**.
-- Palavras que não foram reconhecidas ou pronunciadas incorretamente ficarão em **Vermelho**, indicando onde você precisa focar mais.
+## 3. Como funciona em cada modo
+
+### Conversa real (2 pessoas)
+- Use **FALAR** para falar como você.
+- Ao soltar, o app finaliza a captação e transcreve.
+- O app não fica “ouvindo” no fundo quando você não está pressionando.
+
+### Treinar com o Lino
+- Use **FALAR** para falar com o Lino.
+- O Lino responde **uma vez por interação** (uma resposta por fala sua).
+- Para o Lino responder novamente, você precisa interagir de novo (segurar FALAR ou clicar em uma sugestão).
 
 ---
 
-## 4. Dicas de Uso
+## 4. Correção da sugestão (não é pronúncia)
+O Tradulino mostra uma “correção” comparando sua última fala com a sugestão anterior (quando fizer sentido).
+
+- **Amarelo**: palavras relevantes que bateram com o que você falou.
+- **Vermelho**: palavras relevantes que ficaram faltando para ficar mais próximo da sugestão.
+- **Neutro**: palavras muito comuns (ex.: the, a, to) que não entram na conta.
+
+---
+
+## 5. Dicas de Uso
 - **Ambiente Silencioso**: Para melhor precisão, tente usar o app em locais com pouco ruído de fundo.
-- **Navegador Recomendado**: O **Google Chrome** oferece a melhor experiência devido ao suporte nativo à Web Speech API (mais rápido e sem custo de API).
-- **Mobile**: No celular, o sistema entrará automaticamente no Modo Universal.
+- **Evite usar alto-falante**: se possível, use fone de ouvido para reduzir eco.
+- **Mobile**: segure FALAR com o polegar e fale perto do microfone do aparelho.
 
 ---
 

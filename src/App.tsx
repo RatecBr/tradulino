@@ -1,8 +1,9 @@
 import { useRef, useEffect, useState } from 'react'
-import { Mic, MicOff, Home } from 'lucide-react';
+import { Home } from 'lucide-react';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import { useTranslation } from './hooks/useTranslation';
 import { useAIResponse } from './hooks/useAIResponse';
+import { useAIAutoReply } from './hooks/useAIAutoReply';
 import { TranscriptionPanel } from './components/TranscriptionPanel';
 import { SuggestionDock } from './components/SuggestionDock';
 import { cn } from './lib/utils';
@@ -10,20 +11,28 @@ import { Logo } from './components/Logo';
 import { LandingPage } from './components/LandingPage';
 
 function App() {
-  const [showApp, setShowApp] = useState(false);
+  const [appMode, setAppMode] = useState<'live' | 'practice' | null>(null);
+  const [autoReplyEnabled, setAutoReplyEnabled] = useState(true);
+  const [isTalkPressed, setIsTalkPressed] = useState(false);
 
   const {
     isListening,
     currentInterim,
     history,
+    setActiveSpeaker,
+    beginUserTalk,
+    endUserTalk,
     startListening,
     stopListening,
+    resetTranscript,
     updateHistory,
+    addUtterance,
     mode
-  } = useSpeechRecognition();
+  } = useSpeechRecognition({ sessionMode: appMode === 'practice' ? 'practice' : 'live' });
 
   const { translateText } = useTranslation();
-  const { suggestions, isLoading, generateSuggestions } = useAIResponse();
+  const { suggestions, isLoading, generateSuggestions, resetSuggestions } = useAIResponse();
+  const { generateReply } = useAIAutoReply();
 
   // Track processed items to avoid re-fetching
   const processingRef = useRef<Set<string>>(new Set());
@@ -33,23 +42,40 @@ function App() {
     const lastItem = history[history.length - 1];
 
     // Only process if it's a FINAL item we haven't touched yet
-    if (lastItem && lastItem.isFinal && !processingRef.current.has(lastItem.id)) {
+    const processedKey = lastItem ? `${lastItem.id}:${lastItem.text}` : '';
+    if (lastItem && lastItem.isFinal && !processingRef.current.has(processedKey)) {
 
       // Mark as processed
-      processingRef.current.add(lastItem.id);
+      processingRef.current.add(processedKey);
 
-      // 1. Generate suggestions with context
-      generateSuggestions(lastItem.text, history);
+      // 1. Generate suggestions when the partner/AI speaks
+      if (lastItem.sender === 'other') {
+        generateSuggestions(lastItem.text, history);
+      }
 
       // 2. Translate
       translateText(lastItem.text).then(translation => {
         updateHistory(lastItem.id, { translation });
       });
-    }
-  }, [history, generateSuggestions, translateText, updateHistory]);
 
-  if (!showApp) {
-    return <LandingPage onStart={() => setShowApp(true)} />;
+      // 3. Auto-reply only in Practice mode
+      if (appMode === 'practice' && autoReplyEnabled && lastItem.sender === 'user') {
+        generateReply(lastItem.text, history).then((reply) => {
+          if (reply) addUtterance(reply, 'other');
+        });
+      }
+    }
+  }, [history, generateSuggestions, translateText, updateHistory, generateReply, addUtterance, appMode, autoReplyEnabled]);
+
+  if (!appMode) {
+    return <LandingPage onStart={(selectedMode) => {
+      setAppMode(selectedMode);
+      processingRef.current.clear();
+      setAutoReplyEnabled(true);
+      resetTranscript();
+      resetSuggestions();
+      setActiveSpeaker(selectedMode === 'practice' ? 'user' : 'other');
+    }} />;
   }
 
   return (
@@ -58,7 +84,9 @@ function App() {
       <button 
         onClick={() => {
           if (isListening) stopListening();
-          setShowApp(false);
+          resetTranscript();
+          resetSuggestions();
+          setAppMode(null);
         }}
         className="fixed top-6 left-6 z-[100] flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-95"
       >
@@ -66,9 +94,31 @@ function App() {
         <span className="text-sm font-medium">Voltar à Home</span>
       </button>
 
+      {appMode === 'practice' && (
+        <div className="fixed top-6 right-6 z-[100] flex items-center gap-3">
+          <button
+            onClick={() => setAutoReplyEnabled(v => !v)}
+            className={cn(
+              "px-3 py-2 border rounded-full text-xs font-semibold transition-all",
+              autoReplyEnabled
+                ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-200 hover:bg-emerald-500/25"
+                : "bg-white/5 border-white/10 text-slate-300 hover:bg-white/10"
+            )}
+          >
+            {autoReplyEnabled ? 'Bot: ON' : 'Bot: OFF'}
+          </button>
+        </div>
+      )}
+
       {/* Background Orbs */}
       <div className="fixed top-0 left-0 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
       <div className="fixed bottom-0 right-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[120px] translate-x-1/2 translate-y-1/2 pointer-events-none" />
+      {appMode === 'practice' && (
+        <>
+          <div className="fixed top-0 right-0 w-[620px] h-[620px] bg-[#0FB9B1]/15 rounded-full blur-[140px] translate-x-1/3 -translate-y-1/3 pointer-events-none" />
+          <div className="fixed bottom-0 left-0 w-[620px] h-[620px] bg-[#0FB9B1]/10 rounded-full blur-[140px] -translate-x-1/3 translate-y-1/3 pointer-events-none" />
+        </>
+      )}
 
       {/* Main Content - Fixed Full Screen on Mobile */}
       <main className="flex flex-col md:flex-row relative z-10 w-full h-screen overflow-hidden">
@@ -95,27 +145,68 @@ function App() {
             <SuggestionDock
               suggestions={suggestions}
               isLoading={isLoading}
-              lastUserSpeech={[...history].reverse().find(h => h.sender === 'user')?.text}
+                lastUserSpeech={[...history].reverse().find(h => h.sender === 'user' && h.isFinal)?.text}
               mode={mode}
+              accent={appMode === 'practice' ? 'lino' : 'primary'}
+              onSelect={(text) => addUtterance(text, 'user')}
+              mobileTopRight={
+                <div className="flex items-center gap-2">
+                  <span className={cn(
+                    "text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border",
+                    isTalkPressed
+                      ? "bg-emerald-900/30 text-emerald-300 border-emerald-500/20"
+                      : "bg-white/5 text-slate-300 border-white/10"
+                  )}>
+                    {isTalkPressed ? 'Falando' : 'Segure FALAR'}
+                  </span>
+                </div>
+              }
             />
 
-            {/* Floating Mic Button (Fixed layout) */}
-            <button
-              onClick={isListening ? stopListening : startListening}
-              className={cn(
-                "fixed bottom-6 right-6 z-50 md:absolute md:bottom-8 md:right-8",
-                "w-16 h-16 rounded-full transition-all duration-300 shadow-2xl border backdrop-blur-md flex items-center justify-center",
-                "opacity-90 hover:opacity-100", // Semi-transparent request
-                isListening
-                  ? "bg-red-500/90 text-white animate-pulse border-red-400/50 shadow-red-900/50"
-                  : "bg-emerald-500/80 text-white hover:bg-emerald-400/90 border-emerald-400/50 shadow-emerald-900/50"
-              )}
-            >
-              {isListening ? <Mic className="w-8 h-8" /> : <MicOff className="w-8 h-8" />}
-              {isListening && (
-                <span className="absolute inset-0 rounded-full animate-ping bg-red-500/30" />
-              )}
-            </button>
+            {(appMode === 'live' || appMode === 'practice') && (
+              <button
+                onPointerDown={(e) => {
+                  try {
+                    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+                  } catch { }
+                  setIsTalkPressed(true);
+                  beginUserTalk();
+                  if (!isListening) startListening();
+                }}
+                onPointerUp={(e) => {
+                  try {
+                    (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+                  } catch { }
+                  setIsTalkPressed(false);
+                  endUserTalk();
+                }}
+                onPointerCancel={(e) => {
+                  try {
+                    (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+                  } catch { }
+                  setIsTalkPressed(false);
+                  endUserTalk();
+                }}
+                className={cn(
+                  "mt-4 md:mt-6 w-full rounded-2xl border text-center font-black tracking-widest select-none touch-none",
+                  "py-6 md:py-5 text-3xl md:text-2xl transition-all active:scale-[0.99]",
+                  appMode === 'practice' ? "border-[#0FB9B1]/35" : "border-white/10",
+                  isTalkPressed
+                    ? cn(
+                      "text-emerald-100 shadow-[0_0_30px_rgba(16,185,129,0.15)]",
+                      appMode === 'practice'
+                        ? "bg-[#0FB9B1]/20 border-[#0FB9B1]/55"
+                        : "bg-emerald-500/25 border-emerald-500/40"
+                    )
+                    : cn(
+                      "bg-white/5 text-slate-200 hover:bg-white/10",
+                      appMode === 'practice' ? "border-[#0FB9B1]/35" : "border-white/10"
+                    )
+                )}
+              >
+                FALAR
+              </button>
+            )}
 
             {/* PC Logo (Bottom Right) */}
             <div className="hidden md:flex justify-center items-center mt-auto pb-8 opacity-100">
