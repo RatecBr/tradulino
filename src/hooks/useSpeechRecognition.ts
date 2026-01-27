@@ -198,7 +198,7 @@ export const useSpeechRecognition = (): SpeechRecognitionHook => {
         } else {
             // Polyfill Stop
             isPolyfillLoopActive.current = false;
-            stopRecording().then(blob => {
+            stopRecording().then(() => {
                 // optionally transcribe last chunk, but let's just abort keeping it simple
                 setIsListening(false);
                 setCurrentInterim("");
