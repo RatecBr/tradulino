@@ -7,10 +7,12 @@ interface SuggestionDockProps {
     suggestions: Suggestion[];
     isLoading: boolean;
     onSelect?: (text: string) => void;
-    lastUserSpeech?: string; // New prop for matching
+    lastUserSpeech?: string;
+    mode?: 'native' | 'universal';
 }
 
-export const SuggestionDock: React.FC<SuggestionDockProps> = ({ suggestions, isLoading, onSelect, lastUserSpeech }) => {
+export const SuggestionDock: React.FC<SuggestionDockProps> = ({ suggestions, isLoading, onSelect, lastUserSpeech, mode }) => {
+    // ... existing hook logic ... 
     // We maintain a history of previous suggestion sets
     const [stack, setStack] = useState<Suggestion[][]>([]);
     const [highlightIndex, setHighlightIndex] = useState(-1);
@@ -114,6 +116,17 @@ export const SuggestionDock: React.FC<SuggestionDockProps> = ({ suggestions, isL
 
     return (
         <div className="w-full flex flex-col gap-4 min-h-[120px]">
+            {/* Mode Indicator */}
+            {mode && (
+                <div className="flex justify-end pr-2">
+                    <span className={cn("text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border",
+                        mode === 'native' ? "bg-green-900/40 text-green-400 border-green-500/20" : "bg-blue-900/40 text-blue-400 border-blue-500/20"
+                    )}>
+                        {mode === 'native' ? '⚡ Native' : '🌐 Universal'}
+                    </span>
+                </div>
+            )}
+
             {/* 1. CURRENT Suggestions (Active - Top) */}
             <div className="grid gap-3 grid-cols-1 w-full relative z-20">
                 {isLoading ? (

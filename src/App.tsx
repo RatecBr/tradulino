@@ -1,5 +1,5 @@
-import { useRef, useEffect } from 'react'
-import { Mic, MicOff } from 'lucide-react';
+import { useRef, useEffect, useState } from 'react'
+import { Mic, MicOff, Home } from 'lucide-react';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import { useTranslation } from './hooks/useTranslation';
 import { useAIResponse } from './hooks/useAIResponse';
@@ -7,15 +7,19 @@ import { TranscriptionPanel } from './components/TranscriptionPanel';
 import { SuggestionDock } from './components/SuggestionDock';
 import { cn } from './lib/utils';
 import { Logo } from './components/Logo';
+import { LandingPage } from './components/LandingPage';
 
 function App() {
+  const [showApp, setShowApp] = useState(false);
+
   const {
     isListening,
     currentInterim,
     history,
     startListening,
     stopListening,
-    updateHistory
+    updateHistory,
+    mode
   } = useSpeechRecognition();
 
   const { translateText } = useTranslation();
@@ -44,9 +48,24 @@ function App() {
     }
   }, [history, generateSuggestions, translateText, updateHistory]);
 
+  if (!showApp) {
+    return <LandingPage onStart={() => setShowApp(true)} />;
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-primary/30 overflow-hidden relative">
+      {/* Botão para voltar à Home */}
+      <button 
+        onClick={() => {
+          if (isListening) stopListening();
+          setShowApp(false);
+        }}
+        className="fixed top-6 left-6 z-[100] flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-95"
+      >
+        <Home className="w-4 h-4" />
+        <span className="text-sm font-medium">Voltar à Home</span>
+      </button>
+
       {/* Background Orbs */}
       <div className="fixed top-0 left-0 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
       <div className="fixed bottom-0 right-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[120px] translate-x-1/2 translate-y-1/2 pointer-events-none" />
@@ -77,6 +96,7 @@ function App() {
               suggestions={suggestions}
               isLoading={isLoading}
               lastUserSpeech={[...history].reverse().find(h => h.sender === 'user')?.text}
+              mode={mode}
             />
 
             {/* Floating Mic Button (Fixed layout) */}

@@ -2,51 +2,37 @@ import React from 'react';
 
 export const Logo: React.FC<{ className?: string }> = ({ className }) => (
     <svg
-        viewBox="0 0 900 260"
+        viewBox="0 0 1800 512"
         xmlns="http://www.w3.org/2000/svg"
         className={className}
-        preserveAspectRatio="xMidYMid meet"
+        preserveAspectRatio="xMinYMid meet"
     >
-        <defs>
-            <linearGradient id="brandGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#1F7AE0" />
-                <stop offset="100%" stopColor="#2EC6A6" />
-            </linearGradient>
-        </defs>
-
-        <g transform="translate(70,50)">
-            <path
-                d="
-        M40 30
-        H120
-        C145 30 160 45 160 70
-        V100
-        C160 125 145 140 120 140
-        H90
-        L65 165
-        V140
-        H40
-        C15 140 0 125 0 100
-        V70
-        C0 45 15 30 40 30
-        Z"
-                fill="url(#brandGradient)" />
-
-            <path d="M50 78 Q80 60 110 78"
-                stroke="white" strokeWidth="12"
-                fill="none" strokeLinecap="round" />
-
-            <path d="M50 98 Q80 116 110 98"
-                stroke="white" strokeWidth="12"
-                fill="none" strokeLinecap="round" opacity="0.85" />
+        {/* Ícone fornecido pelo usuário - Versão final com Chevrons */}
+        <g fill="none" stroke="#0A7CFF" strokeWidth="36" strokeLinecap="round" strokeLinejoin="round"> 
+            {/* Letra T */} 
+            <line x1="156" y1="140" x2="356" y2="140" /> 
+            <line x1="256" y1="140" x2="256" y2="300" /> 
+        
+            {/* Chevron esquerdo (rotacionado para a esquerda) */} 
+            <path d="M140 236 L120 256 L140 276" /> 
+        
+            {/* Chevron direito (rotacionado para a direita) */} 
+            <path d="M372 236 L392 256 L372 276" /> 
+        
+            {/* Chevron inferior (para baixo) */} 
+            <path d="M236 360 L256 380 L276 360" /> 
         </g>
 
-        <text x="300" y="155"
-            fontFamily="Inter, Poppins, Segoe UI, Arial, sans-serif"
-            fontSize="78"
-            fontWeight="600"
-            fill="currentColor"
-            letterSpacing="1.6">
+        {/* Texto TRADULINO - Cor alterada para #0A7CFF para combinar com a logo */}
+        <text 
+            x="500" 
+            y="300"
+            fontFamily="Inter, system-ui, -apple-system, sans-serif"
+            fontSize="160"
+            fontWeight="900"
+            fill="#0A7CFF"
+            letterSpacing="-4"
+        >
             TRADULINO
         </text>
     </svg>
