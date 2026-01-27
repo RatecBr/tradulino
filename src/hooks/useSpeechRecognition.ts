@@ -30,10 +30,12 @@ export const useSpeechRecognition = (): SpeechRecognitionHook => {
     const [history, setHistory] = useState<Utterance[]>([]);
 
     // System Selection
-    const hasNativeSupport = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+    const [forceUniversal, setForceUniversal] = useState(false);
+    const hasNativeSupport = !!(window.SpeechRecognition || window.webkitSpeechRecognition) && !forceUniversal;
 
     // --- Native Logic ---
     const [recognition, setRecognition] = useState<any>(null);
+    const nativeErrorCount = useRef(0);
     const isListeningRef = useRef(false);
     const lastUtteranceTime = useRef<number>(Date.now());
     const currentSpeakerId = useRef<number>(1);
@@ -45,6 +47,7 @@ export const useSpeechRecognition = (): SpeechRecognitionHook => {
     // --- Helper: Add Text to History ---
     const addTextToHistory = useCallback((text: string) => {
         if (!text) return;
+        console.log("Adding text to history:", text);
         const now = Date.now();
         const timeSinceLast = now - lastUtteranceTime.current;
         let speakerChanged = false;
@@ -81,22 +84,52 @@ export const useSpeechRecognition = (): SpeechRecognitionHook => {
     // --- Helper: Transcribe Audio Blob ---
     const transcribeBlob = async (blob: Blob) => {
         try {
+            console.log("Transcribing blob of size:", blob.size);
             const reader = new FileReader();
             reader.onloadend = async () => {
                 const base64Audio = (reader.result as string).split(',')[1];
+                console.log("Sending to /api/transcribe...");
                 const response = await fetch('/api/transcribe', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ audio: base64Audio })
                 });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Server error: ${response.status} - ${errorText}`);
+                }
+
                 const data = await response.json();
+                console.log("Transcription response:", data);
                 if (data && data.text) {
-                    addTextToHistory(data.text);
+                    const cleanedText = data.text.trim();
+                    
+                    // Filter out common Whisper hallucinations on silence
+                    const hallucinations = [
+                        "MBC 뉴스", 
+                        "MBC News", 
+                        "신선한 경제", 
+                        "이덕영입니다", 
+                        "이학수입니다",
+                        "Thank you for watching",
+                        "Please subscribe",
+                        "Subtitles by",
+                        "Bye."
+                    ];
+
+                    const isHallucination = hallucinations.some(h => cleanedText.includes(h));
+                    
+                    if (!isHallucination && cleanedText.length > 1) {
+                        addTextToHistory(cleanedText);
+                    } else {
+                        console.log("Ignored likely hallucination or empty text:", cleanedText);
+                    }
                 }
             };
             reader.readAsDataURL(blob);
         } catch (e) {
-            console.error("Transcription failed", e);
+            console.error("Transcription failed:", e);
         }
     };
 
@@ -109,6 +142,11 @@ export const useSpeechRecognition = (): SpeechRecognitionHook => {
             instance.continuous = true;
             instance.interimResults = true;
             instance.lang = 'en-US';
+
+            instance.onstart = () => {
+                console.log("Native Speech Recognition started.");
+                setIsListening(true);
+            };
 
             instance.onresult = (event: any) => {
                 let interimTx = '';
@@ -131,10 +169,34 @@ export const useSpeechRecognition = (): SpeechRecognitionHook => {
             };
 
             instance.onerror = (e: any) => {
-                if (e.error === 'not-allowed') setIsListening(false);
+                console.error("Speech Recognition Error:", e.error, e.message);
+                
+                if (e.error === 'not-allowed') {
+                    setIsListening(false);
+                    isListeningRef.current = false;
+                }
+
+                if (e.error === 'network') {
+                    console.warn("Network error during native recognition. Switching to Universal Mode...");
+                    nativeErrorCount.current += 1;
+                    
+                    if (nativeErrorCount.current >= 1) {
+                        setForceUniversal(true);
+                        // Seamless switch: if we were listening, start the polyfill immediately
+                        if (isListeningRef.current) {
+                            isPolyfillLoopActive.current = true;
+                            runPolyfillLoop();
+                        }
+                    }
+                }
             }
 
             setRecognition(instance);
+        } else {
+            if (recognition) {
+                try { recognition.abort(); } catch(e) {}
+                setRecognition(null);
+            }
         }
     }, [hasNativeSupport, addTextToHistory]);
 
@@ -178,6 +240,7 @@ export const useSpeechRecognition = (): SpeechRecognitionHook => {
 
 
     const startListening = useCallback(() => {
+        console.log("startListening called. NativeSupport:", hasNativeSupport, "MicSupport:", hasMicSupport);
         isListeningRef.current = true;
         if (hasNativeSupport && recognition) {
             try { recognition.start(); setIsListening(true); } catch (e) { }

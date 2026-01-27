@@ -94,6 +94,8 @@ app.post('/api/transcribe', async (req, res) => {
         const formData = new FormData();
         formData.append('file', buffer, { filename: 'audio.webm', contentType: 'audio/webm' });
         formData.append('model', 'whisper-1');
+        formData.append('language', 'en');
+        formData.append('prompt', 'Transcribe this English conversation. If there is silence, return nothing.');
 
         const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
             method: 'POST',

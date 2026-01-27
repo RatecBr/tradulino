@@ -26,7 +26,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const formData = new FormData();
         formData.append('file', buffer, { filename: 'recording.webm', contentType: 'audio/webm' });
         formData.append('model', 'whisper-1');
-        formData.append('language', 'en'); // Optional: Hints language
+        formData.append('language', 'en'); 
+        formData.append('prompt', 'Transcribe this English conversation. If there is silence, return nothing.');
 
         // Call Whisper API
         const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
