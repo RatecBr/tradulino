@@ -206,17 +206,6 @@ function App() {
                   .reverse()
                   .find((h) => h.sender === "user" && h.isFinal)?.text
               }
-              onManualRefresh={() => {
-                const lastPartnerItem = [...history]
-                  .reverse()
-                  .find((h) => h.sender === "other" && h.isFinal);
-                if (lastPartnerItem) {
-                  suggestionsAbortControllerRef.current?.abort();
-                  const suggestionsController = new AbortController();
-                  suggestionsAbortControllerRef.current = suggestionsController;
-                  generateSuggestions(lastPartnerItem.text, history, suggestionsController.signal);
-                }
-              }}
               mode={mode}
               accent={appMode === "practice" ? "lino" : "primary"}
               onSelect={(text) => addUtterance(text, "user")}

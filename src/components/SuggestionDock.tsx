@@ -8,7 +8,6 @@ interface SuggestionDockProps {
     suggestions: Suggestion[];
     isLoading: boolean;
     onSelect?: (text: string) => void;
-    onManualRefresh?: () => void;
     status?: string;
     lastUserSpeech?: string;
     mode?: 'native' | 'universal';
@@ -16,7 +15,7 @@ interface SuggestionDockProps {
     accent?: 'primary' | 'lino';
 }
 
-export const SuggestionDock: React.FC<SuggestionDockProps> = ({ suggestions, isLoading, status = 'idle', onSelect, onManualRefresh, lastUserSpeech, mode, mobileTopRight, accent = 'primary' }) => {
+export const SuggestionDock: React.FC<SuggestionDockProps> = ({ suggestions, isLoading, status = 'idle', onSelect, lastUserSpeech, mode, mobileTopRight, accent = 'primary' }) => {
     // ... existing hook logic ... 
     // We maintain a history of previous suggestion sets
     const [stack, setStack] = useState<Suggestion[][]>([]);
@@ -248,24 +247,6 @@ export const SuggestionDock: React.FC<SuggestionDockProps> = ({ suggestions, isL
                 )}
             </div>
 
-            {/* Manual Refresh / Retry Button */}
-            <div className="flex justify-center mt-2">
-                <button
-                    onClick={() => {
-                        console.log("👆 Manual refresh clicked!");
-                        onManualRefresh?.();
-                    }}
-                    disabled={isLoading}
-                    className={cn(
-                        "text-[10px] uppercase font-bold px-3 py-1.5 rounded-lg border transition-all",
-                        "hover:bg-white/10 active:scale-95",
-                        accent === 'lino' ? "text-[#0FB9B1] border-[#0FB9B1]/20" : "text-primary border-primary/20",
-                        isLoading && "opacity-20 cursor-not-allowed"
-                    )}
-                >
-                    {isLoading ? "Consultando..." : "Atualizar Sugestões"}
-                </button>
-            </div>
 
             {/* 2. PREVIOUS Suggestions (History - Bottom) */}
             <div className="hidden md:flex items-end gap-3 px-1 mt-2">
