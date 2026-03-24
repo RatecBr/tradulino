@@ -2,7 +2,7 @@
 async function test() {
     try {
         console.log("Testing /api/translate...");
-        const response = await fetch('http://localhost:3000/api/translate', {
+        const response = await fetch('http://localhost:8081/api/translate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ text: "Hello world" })

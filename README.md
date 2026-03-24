@@ -19,37 +19,22 @@ O Tradulino é uma ferramenta de IA projetada para ajudar você a manter convers
 
 ---
 
-## 🚀 Início Rápido
+### 🚀 Início Rápido
 
-### Pré-requisitos
-*   [Node.js](https://nodejs.org/) instalado.
-*   Uma chave de API da [OpenAI](https://platform.openai.com/).
+1.  **Instale as dependências:** `npm install`
+2.  **Configure o `.env`**: `OPENAI_API_KEY=sk-...`
+3.  **Inicie o ambiente:** `npm run dev`
+    *   **Frontend:** `http://localhost:8080`
+    *   **Backend:** `http://localhost:8081`
 
-### Instalação
+---
 
-1.  **Clone o repositório:**
-    ```bash
-    git clone https://github.com/RatecBr/tradulino.git
-    cd tradulino
-    ```
+## ⚡ Performance e Confiabilidade (V4)
 
-2.  **Instale as dependências:**
-    ```bash
-    npm install
-    ```
-
-3.  **Configure as variáveis de ambiente:**
-    Crie um arquivo `.env` na raiz do projeto:
-    ```env
-    OPENAI_API_KEY=sk-sua-chave-aqui...
-    ```
-
-4.  **Inicie o ambiente de desenvolvimento:**
-    ```bash
-    npm run dev
-    ```
-    *   **Frontend:** `http://localhost:5173`
-    *   **Backend:** `http://localhost:8080`
+O Tradulino foi otimizado para sessões longas e uso intenso:
+*   **Janela de Contexto**: Mantém apenas as últimas 50 mensagens na memória ativa para evitar travamentos.
+*   **Memoização UI**: Bolhas de conversa "congeladas" para economia de CPU/Bateria.
+*   **Gestão de Threads**: AbortControllers centralizados para evitar conflitos de IA.
 
 ---
 

@@ -30,7 +30,7 @@ export const useAudioRecorder = () => {
                 audioContextRef.current = new AudioContext();
             }
             if (audioContextRef.current.state === 'suspended') {
-                try { await audioContextRef.current.resume(); } catch { }
+                try { await audioContextRef.current.resume(); } catch { /* empty */ }
             }
 
             if (!analyserRef.current) {
@@ -102,7 +102,7 @@ export const useAudioRecorder = () => {
                     streamRef.current = null;
 
                     if (analyserRef.current) {
-                        try { analyserRef.current.disconnect(); } catch { }
+                        try { analyserRef.current.disconnect(); } catch { /* empty */ }
                         analyserRef.current = null;
                     }
 
@@ -138,7 +138,7 @@ export const useAudioRecorder = () => {
                     streamRef.current = null;
 
                     if (analyserRef.current) {
-                        try { analyserRef.current.disconnect(); } catch { }
+                        try { analyserRef.current.disconnect(); } catch { /* empty */ }
                         analyserRef.current = null;
                     }
 

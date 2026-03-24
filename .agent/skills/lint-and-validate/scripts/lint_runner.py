@@ -134,6 +134,8 @@ def main():
     all_passed = True
     
     for linter in project_info["linters"]:
+        if sys.platform == "win32" and linter["cmd"][0] in ["npm", "npx"]:
+            linter["cmd"][0] += ".cmd"
         print(f"\nRunning: {linter['name']}...")
         result = run_linter(linter, project_path)
         results.append(result)

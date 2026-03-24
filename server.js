@@ -8,7 +8,7 @@ import FormData from 'form-data';
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 8080;
+const port = process.env.PORT || 8081;
 
 app.use(cors());
 // Increase JSON payload limit to 50mb to handle base64 audio
@@ -29,7 +29,7 @@ async function callOpenAI(messages, temperature = 0.7, max_tokens = 150) {
             'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-            model: "gpt-3.5-turbo",
+            model: "gpt-4o-mini",
             messages: messages,
             temperature: temperature,
             max_tokens: max_tokens
@@ -55,7 +55,9 @@ app.post('/api/chat', async (req, res) => {
                 ? Math.min(250, Math.max(1, Math.floor(max_tokens)))
                 : 150;
 
+        console.log("--- AI Suggestion Request ---");
         const data = await callOpenAI(messages, safeTemperature, safeMaxTokens);
+        console.log("✅ Suggestion Response from OpenAI: Success");
         res.json(data);
     } catch (error) {
         console.error("Chat Error:", error);
@@ -119,11 +121,15 @@ app.post('/api/transcribe', async (req, res) => {
         const formData = new FormData();
         const finalFilename = detected?.filename ?? filename;
         const finalContentType = detected?.contentType ?? safeMimeType;
-        console.log("Transcribe upload:", { bytes: buffer.length, mimeType: safeMimeType, magicHex, finalContentType, finalFilename });
+        
+        console.log("--- Transcribe Request ---");
+        console.log("Audio Size:", buffer.length);
+        console.log("MimeType:", safeMimeType);
+
         formData.append('file', buffer, { filename: finalFilename, contentType: finalContentType });
         formData.append('model', 'whisper-1');
         formData.append('language', 'en');
-        formData.append('prompt', 'This is a conversation in English. If you hear silence or background noise, do not transcribe anything. Ignore phrases like "Thank you for watching" or video subtitles.');
+        formData.append('prompt', 'This is a conversation in English. If you hear silence or background noise, do not transcribe anything.');
 
         const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
             method: 'POST',
@@ -136,7 +142,7 @@ app.post('/api/transcribe', async (req, res) => {
 
         if (!response.ok) {
             const err = await response.text();
-            console.error("OpenAI Whisper Error:", err);
+            console.error("❌ OpenAI Whisper Error:", response.status, err);
             return res.status(response.status).json({ error: `OpenAI Error: ${err}` });
         }
 
@@ -144,7 +150,7 @@ app.post('/api/transcribe', async (req, res) => {
         res.json({ text: data.text });
 
     } catch (error) {
-        console.error("Transcribe Error:", error);
+        console.error("❌ Transcribe Endpoint Error:", error);
         res.status(500).json({ error: error.message });
     }
 });

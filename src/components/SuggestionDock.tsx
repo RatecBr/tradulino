@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '../lib/utils';
@@ -7,13 +8,15 @@ interface SuggestionDockProps {
     suggestions: Suggestion[];
     isLoading: boolean;
     onSelect?: (text: string) => void;
+    onManualRefresh?: () => void;
+    status?: string;
     lastUserSpeech?: string;
     mode?: 'native' | 'universal';
     mobileTopRight?: React.ReactNode;
     accent?: 'primary' | 'lino';
 }
 
-export const SuggestionDock: React.FC<SuggestionDockProps> = ({ suggestions, isLoading, onSelect, lastUserSpeech, mode, mobileTopRight, accent = 'primary' }) => {
+export const SuggestionDock: React.FC<SuggestionDockProps> = ({ suggestions, isLoading, status = 'idle', onSelect, onManualRefresh, lastUserSpeech, mode, mobileTopRight, accent = 'primary' }) => {
     // ... existing hook logic ... 
     // We maintain a history of previous suggestion sets
     const [stack, setStack] = useState<Suggestion[][]>([]);
@@ -156,7 +159,7 @@ export const SuggestionDock: React.FC<SuggestionDockProps> = ({ suggestions, isL
 
         setHighlightIndex(highest >= 0.25 ? bestIdx : -1);
 
-    }, [lastUserSpeech, previousSet]);
+    }, [lastUserSpeech, previousSet, tokenizeForMatch]);
 
     // Word highlighting renderer
     const renderHighlightedText = (text: string) => {
@@ -230,13 +233,38 @@ export const SuggestionDock: React.FC<SuggestionDockProps> = ({ suggestions, isL
                         ))
                     ) : (
                         <div className={cn(
-                            "h-40 flex items-center justify-center text-slate-500 italic border border-dashed rounded-xl",
+                            "h-40 flex flex-col items-center justify-center text-slate-500 italic border border-dashed rounded-xl gap-2",
                             accent === 'lino' ? "border-[#0FB9B1]/25" : "border-white/10"
                         )}>
-                            Aguardando contexto...
+                            <span>Aguardando contexto...</span>
+                            <span className="text-[10px] uppercase tracking-widest opacity-40 not-italic font-bold">
+                                {status === 'idle' ? 'Sistema ocioso' : 
+                                 status === 'generating' ? 'Consultando IA...' : 
+                                 status === 'analysing' ? 'Analisando resposta...' : 
+                                 'Processando'}
+                            </span>
                         </div>
                     )
                 )}
+            </div>
+
+            {/* Manual Refresh / Retry Button */}
+            <div className="flex justify-center mt-2">
+                <button
+                    onClick={() => {
+                        console.log("👆 Manual refresh clicked!");
+                        onManualRefresh?.();
+                    }}
+                    disabled={isLoading}
+                    className={cn(
+                        "text-[10px] uppercase font-bold px-3 py-1.5 rounded-lg border transition-all",
+                        "hover:bg-white/10 active:scale-95",
+                        accent === 'lino' ? "text-[#0FB9B1] border-[#0FB9B1]/20" : "text-primary border-primary/20",
+                        isLoading && "opacity-20 cursor-not-allowed"
+                    )}
+                >
+                    {isLoading ? "Consultando..." : "Atualizar Sugestões"}
+                </button>
             </div>
 
             {/* 2. PREVIOUS Suggestions (History - Bottom) */}

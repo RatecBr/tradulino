@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useCallback, useRef } from 'react';
 import { useAudioRecorder } from './useAudioRecorder';
 
@@ -99,13 +100,21 @@ export const useSpeechRecognition = (options?: { sessionMode?: 'live' | 'practic
 
     // --- Helper: Add Text to History ---
     const addTextToHistory = useCallback((text: string, senderOverride?: 'user' | 'other') => {
-        if (!text || isHallucination(text)) return;
+        if (!text) return;
+        
+        if (isHallucination(text)) {
+            console.log("🚫 Filtered out hallucination/noise:", text);
+            return;
+        }
 
         const cleanedText = text.trim();
         const senderCandidate = senderOverride ?? activeSpeakerRef.current;
-        if (senderCandidate === 'other') {
+        
+        // Stricter filtering for background noise/partner in Live Mode
+        // BUT more permissive in Practice mode or for manual utterances
+        if (senderCandidate === 'other' && !senderOverride) {
             const wordCount = cleanedText.split(/\s+/).filter(Boolean).length;
-            if (cleanedText.length < 8 || wordCount < 2) return;
+            if (cleanedText.length < 5 || wordCount < 1) return; // Relaxed slightly
         }
 
         const now = Date.now();
@@ -117,23 +126,28 @@ export const useSpeechRecognition = (options?: { sessionMode?: 'live' | 'practic
         setHistory(prev => {
             const lastItem = prev[prev.length - 1];
 
+            let nextHistory: Utterance[];
+
             if (lastItem && lastItem.sender === sender && timeSinceLast < 2500) {
-                return prev.map((item, idx) => {
+                nextHistory = prev.map((item, idx) => {
                     if (idx === prev.length - 1) {
                         return { ...item, text: item.text + " " + text, timestamp: now, translation: undefined };
                     }
                     return item;
                 });
+            } else {
+                const newId = Date.now().toString() + Math.random().toString().slice(2, 5);
+                nextHistory = [...prev, {
+                    id: newId,
+                    text: text,
+                    timestamp: now,
+                    isFinal: true,
+                    sender
+                }];
             }
 
-            const newId = Date.now().toString() + Math.random().toString().slice(2, 5);
-            return [...prev, {
-                id: newId,
-                text: text,
-                timestamp: now,
-                isFinal: true,
-                sender
-            }];
+            // Windowing: Only keep the last 50 items
+            return nextHistory.length > 50 ? nextHistory.slice(-50) : nextHistory;
         });
     }, [sessionMode]);
 
@@ -206,15 +220,18 @@ export const useSpeechRecognition = (options?: { sessionMode?: 'live' | 'practic
                     if (response.ok) {
                         const data = await response.json();
                         if (data && data.text) {
+                            console.log(`🎤 [${sessionMode.toUpperCase()}] Transcribe (${senderForChunk}):`, data.text);
                             if (sessionMode === 'practice' && senderForChunk === 'user') {
                                 appendPracticeDraft(data.text);
                             } else {
                                 addTextToHistory(data.text, senderForChunk);
                             }
+                        } else {
+                            console.log("🎤 Transcribe returned empty text.");
                         }
                     }
-                } catch (e: any) {
-                    if (e?.name !== 'AbortError') {
+                } catch (e) {
+                    if ((e as Error)?.name !== 'AbortError') {
                         console.error("Transcribe request failed:", e);
                     }
                 } finally {
@@ -265,8 +282,8 @@ export const useSpeechRecognition = (options?: { sessionMode?: 'live' | 'practic
             }
             const { blob, maxRms } = await stopRecording(false);
 
-            const VAD_RMS_THRESHOLD = senderForChunk === 'other' ? 0.028 : 0.009;
-            const MIN_BLOB_SIZE = senderForChunk === 'other' ? 2200 : 300;
+            const VAD_RMS_THRESHOLD = senderForChunk === 'other' ? 0.018 : 0.009;
+            const MIN_BLOB_SIZE = senderForChunk === 'other' ? 1000 : 300;
             if (blob && blob.size > MIN_BLOB_SIZE && maxRms >= VAD_RMS_THRESHOLD) {
                 transcribeBlob(blob, senderForChunk);
             }
@@ -324,9 +341,12 @@ export const useSpeechRecognition = (options?: { sessionMode?: 'live' | 'practic
     const endUserTalk = useCallback(() => {
         isPushToTalkActiveRef.current = false;
         setActiveSpeaker('other');
-        stopAfterThisChunkRef.current = true;
+        // In Live mode, we want to keep listening to the partner automatically
+        if (sessionMode !== 'live') {
+            stopAfterThisChunkRef.current = true;
+        }
         chunkWaitAbortRef.current?.abort();
-    }, [setActiveSpeaker]);
+    }, [setActiveSpeaker, sessionMode]);
 
     const switchSpeaker = useCallback((speaker: 'user' | 'other') => {
         if (sessionMode === 'practice') return;
@@ -392,7 +412,16 @@ export const useSpeechRecognition = (options?: { sessionMode?: 'live' | 'practic
         resetTranscript: () => setHistory([]),
         addUtterance,
         browserSupportsSpeechRecognition: true,
-        updateHistory: (id, updates) => setHistory(p => p.map(i => i.id === id ? { ...i, ...updates } : i)),
+        updateHistory: (id, updates) => {
+            setHistory(prev => {
+                const existing = prev.find(i => i.id === id);
+                if (!existing) return prev;
+                // Shallow equality check for updates
+                const hasChange = (Object.keys(updates) as (keyof Utterance)[]).some(k => existing[k] !== updates[k]);
+                if (!hasChange) return prev;
+                return prev.map(i => i.id === id ? { ...i, ...updates } : i);
+            });
+        },
         mode: 'universal'
     };
 };

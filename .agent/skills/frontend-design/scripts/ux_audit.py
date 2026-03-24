@@ -113,7 +113,7 @@ class UXAuditor:
 
         # Pre-calculate common flags
         has_long_text = bool(re.search(r'<p|<div.*class=.*text|article|<span.*text', content, re.IGNORECASE))
-        has_form = bool(re.search(r'<form|<input|password|credit|card|payment', content, re.IGNORECASE))
+        has_form = bool(re.search(r'<form\b|<input\b|type=["\']password["\']|credit\s*card|payment\s*method', content, re.IGNORECASE))
         complex_elements = len(re.findall(r'<input|<select|<textarea|<option', content, re.IGNORECASE))
 
         # --- 1. PSYCHOLOGY LAWS ---
@@ -701,7 +701,8 @@ def main():
     report = auditor.get_report()
     
     if is_json:
-        print(json.dumps(report))
+        with open("ux_audit2.json", "w", encoding="utf-8") as f:
+            f.write(json.dumps(report, indent=2))
     else:
         # Use ASCII-safe output for Windows console compatibility
         print(f"\n[UX AUDIT] {report['files_checked']} files checked")

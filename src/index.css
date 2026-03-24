@@ -13,7 +13,7 @@
     --popover: 224 71% 4%;
     --popover-foreground: 213 31% 91%;
 
-    --primary: 263 70% 50%; /* Electric Violet */
+    --primary: 175 70% 41%; /* Emerald */
     --primary-foreground: 210 40% 98%;
 
     --secondary: 222 47% 11%;
@@ -30,7 +30,7 @@
 
     --border: 216 34% 17%;
     --input: 216 34% 17%;
-    --ring: 263 70% 50%;
+    --ring: 175 70% 41%;
 
     --radius: 0.75rem;
   }
@@ -42,7 +42,9 @@
   }
   body {
     @apply bg-background text-foreground antialiased selection:bg-primary/20;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
   }
 }
 
@@ -57,9 +59,15 @@
 
 /* Animations */
 @keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
 }
 
 .animate-float {
@@ -67,8 +75,15 @@
 }
 
 @keyframes pulse-glow {
-  0%, 100% { opacity: 1; box-shadow: 0 0 20px -5px var(--primary); }
-  50% { opacity: 0.7; box-shadow: 0 0 10px -5px var(--primary); }
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 20px -5px var(--primary);
+  }
+  50% {
+    opacity: 0.7;
+    box-shadow: 0 0 10px -5px var(--primary);
+  }
 }
 
 .animate-pulse-glow {

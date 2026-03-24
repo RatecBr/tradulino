@@ -4,7 +4,7 @@ export const useAIAutoReply = () => {
   const [isReplying, setIsReplying] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const generateReply = useCallback(async (userText: string, history: any[]) => {
+  const generateReply = useCallback(async (userText: string, history: { sender?: string; text: string }[], signal?: AbortSignal) => {
     const cleaned = (userText ?? '').trim();
     if (!cleaned) return null;
 
@@ -14,7 +14,7 @@ export const useAIAutoReply = () => {
     try {
       const recentHistory = history
         .slice(-10)
-        .map((h: any) => `${h.sender === 'user' ? 'User' : 'Partner'}: ${h.text}`)
+        .map((h: { sender?: string; text: string }) => `${h.sender === 'user' ? 'User' : 'Partner'}: ${h.text}`)
         .join('\n');
 
       const messages = [
@@ -36,7 +36,8 @@ export const useAIAutoReply = () => {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages, temperature: 0.7, max_tokens: 70 })
+        body: JSON.stringify({ messages, temperature: 0.7, max_tokens: 70 }),
+        signal
       });
 
       if (!response.ok) throw new Error('API Request Failed');
@@ -46,7 +47,7 @@ export const useAIAutoReply = () => {
       if (!content) return null;
 
       return String(content).replace(/```/g, '').trim();
-    } catch (e) {
+    } catch {
       setError('Failed to generate reply');
       return null;
     } finally {

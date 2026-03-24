@@ -7,6 +7,7 @@ export interface Suggestion {
 }
 
 export const useAIResponse = () => {
+    const [status, setStatus] = useState<string>('idle');
     const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -15,13 +16,19 @@ export const useAIResponse = () => {
         setSuggestions([]);
         setIsLoading(false);
         setError(null);
+        setStatus('idle');
     }, []);
 
-    const generateSuggestions = useCallback(async (currentText: string, history: any[]) => {
+    const generateSuggestions = useCallback(async (currentText: string, history: { sender?: string; text: string }[], signal?: AbortSignal) => {
         // Reduced threshold for context generation
-        if (!currentText || currentText.length < 2) return;
+        if (!currentText || currentText.length < 2) {
+            console.log("⚠️ Text too short for suggestions:", currentText);
+            return;
+        }
 
+        console.log("🚀 Starting suggestion generation for:", currentText);
         setIsLoading(true);
+        setStatus('generating');
         setError(null);
 
         // Build conversation context (Last 6 messages)
@@ -72,27 +79,37 @@ export const useAIResponse = () => {
                 }
             ];
 
+            console.log("--- AI Suggestion Request ---");
+            console.log("Context sent:", fullContext);
+
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ messages, temperature: 0.4, max_tokens: 90 })
+                body: JSON.stringify({ messages, temperature: 0.4, max_tokens: 90 }),
+                signal
             });
 
-            if (!response.ok) throw new Error('API Request Failed');
+            if (!response.ok) {
+                console.error("❌ Suggestion API Error:", response.status);
+                throw new Error('API Request Failed');
+            }
 
             const data = await response.json();
+            setStatus('analysing');
 
             if (data.choices && data.choices.length > 0) {
                 let content = data.choices[0].message.content;
+                console.log("✅ Raw AI Response:", content);
+                
                 // Clean up markdown code blocks if present
                 content = content.replace(/```json/g, '').replace(/```/g, '').trim();
 
                 try {
                     const parsed = JSON.parse(content);
                     if (Array.isArray(parsed)) {
-                        const newSuggestions = parsed.slice(0, 2).map((item: any) => ({
+                        const newSuggestions = parsed.slice(0, 2).map((item: { en: string; pt: string }) => ({
                             en: item.en || "Error",
                             pt: item.pt || "..."
                         }));
@@ -120,5 +137,5 @@ export const useAIResponse = () => {
         }
     }, []);
 
-    return { suggestions, isLoading, error, generateSuggestions, resetSuggestions };
+    return { suggestions, isLoading, error, status, generateSuggestions, resetSuggestions };
 };
