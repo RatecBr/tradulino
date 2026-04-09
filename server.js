@@ -100,7 +100,7 @@ app.post('/api/translate', async (req, res) => {
 // /api/transcribe endpoint
 app.post('/api/transcribe', async (req, res) => {
     try {
-        const { audio, mimeType } = req.body;
+        const { audio, mimeType, context } = req.body;
         if (!apiKey) return res.status(500).json({ error: 'Missing API Key' });
 
         const buffer = Buffer.from(audio, 'base64');
@@ -129,7 +129,10 @@ app.post('/api/transcribe', async (req, res) => {
         formData.append('file', buffer, { filename: finalFilename, contentType: finalContentType });
         formData.append('model', 'whisper-1');
         formData.append('language', 'en');
-        formData.append('prompt', 'This is a conversation in English. If you hear silence or background noise, do not transcribe anything.');
+        
+        const basePrompt = 'This is a conversation in English. If you hear silence or background noise, do not transcribe anything. Ignore phrases like "Thank you for watching" or video subtitles.';
+        const finalPrompt = context ? `${basePrompt} Context: ${context}` : basePrompt;
+        formData.append('prompt', finalPrompt);
 
         const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
             method: 'POST',

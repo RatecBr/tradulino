@@ -35,6 +35,7 @@ export const useSpeechRecognition = (options?: { sessionMode?: 'live' | 'practic
     const [isListening, setIsListening] = useState(false);
     const [currentInterim, setCurrentInterim] = useState('');
     const [history, setHistory] = useState<Utterance[]>([]);
+    const historyRef = useRef<Utterance[]>([]);
     const [activeSpeaker, setActiveSpeakerState] = useState<'user' | 'other'>('other');
 
     // --- Refs ---
@@ -52,6 +53,7 @@ export const useSpeechRecognition = (options?: { sessionMode?: 'live' | 'practic
     const practiceFinalizeTimerRef = useRef<number | null>(null);
     const practiceDraftRef = useRef<string>('');
     const stopAfterThisChunkRef = useRef(false);
+    const isUserDoneRef = useRef(false);
 
     const sessionMode: 'live' | 'practice' = options?.sessionMode ?? 'live';
 
@@ -147,7 +149,9 @@ export const useSpeechRecognition = (options?: { sessionMode?: 'live' | 'practic
             }
 
             // Windowing: Only keep the last 50 items
-            return nextHistory.length > 50 ? nextHistory.slice(-50) : nextHistory;
+            const finalHistory = nextHistory.length > 50 ? nextHistory.slice(-50) : nextHistory;
+            historyRef.current = finalHistory;
+            return finalHistory;
         });
     }, [sessionMode]);
 
@@ -159,13 +163,17 @@ export const useSpeechRecognition = (options?: { sessionMode?: 'live' | 'practic
         const newId = Date.now().toString() + Math.random().toString().slice(2, 5);
         lastUtteranceTime.current = now;
 
-        setHistory(prev => [...prev, {
-            id: newId,
-            text: cleaned,
-            timestamp: now,
-            isFinal: true,
-            sender
-        }]);
+        setHistory(prev => {
+            const nextHistory = [...prev, {
+                id: newId,
+                text: cleaned,
+                timestamp: now,
+                isFinal: true,
+                sender
+            }];
+            historyRef.current = nextHistory;
+            return nextHistory;
+        });
     }, []);
 
     const appendPracticeDraft = useCallback((text: string) => {
@@ -210,10 +218,20 @@ export const useSpeechRecognition = (options?: { sessionMode?: 'live' | 'practic
 
                 try {
                     const base64Audio = (reader.result as string).split(',')[1];
+                    const recentContext = historyRef.current
+                        .slice(-3)
+                        .map(u => u.text)
+                        .join(' ')
+                        .slice(-150); // limit to last ~150 chars to avoid prompt overflow
+
                     const response = await fetch('/api/transcribe', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ audio: base64Audio, mimeType: blob.type }),
+                        body: JSON.stringify({ 
+                            audio: base64Audio, 
+                            mimeType: blob.type,
+                            context: recentContext 
+                        }),
                         signal: controller.signal
                     });
 
@@ -236,13 +254,16 @@ export const useSpeechRecognition = (options?: { sessionMode?: 'live' | 'practic
                     }
                 } finally {
                     inFlightTranscribesRef.current.delete(controller);
+                    if (sessionMode === 'practice' && isUserDoneRef.current && inFlightTranscribesRef.current.size === 0) {
+                        finalizePracticeDraft();
+                    }
                 }
             };
             reader.readAsDataURL(blob);
         } catch (e) {
             console.error("Transcription failed:", e);
         }
-    }, [addTextToHistory, appendPracticeDraft, sessionMode]);
+    }, [addTextToHistory, appendPracticeDraft, sessionMode, finalizePracticeDraft]);
 
     const runPolyfillLoop = useCallback(async () => {
         if (!isPolyfillLoopActive.current) return;
@@ -329,17 +350,23 @@ export const useSpeechRecognition = (options?: { sessionMode?: 'live' | 'practic
     }, [hasMicSupport, runPolyfillLoop, sessionMode, setActiveSpeaker]);
 
     const beginUserTalk = useCallback(() => {
+        if (!isListeningRef.current) {
+            startListening();
+        }
         setActiveSpeaker('user');
         isPushToTalkActiveRef.current = true;
         stopAfterThisChunkRef.current = false;
+        isUserDoneRef.current = false;
         if (userReleaseAbortTimerRef.current) {
             clearTimeout(userReleaseAbortTimerRef.current);
             userReleaseAbortTimerRef.current = null;
         }
-    }, [setActiveSpeaker]);
+        chunkWaitAbortRef.current?.abort();
+    }, [setActiveSpeaker, startListening]);
 
     const endUserTalk = useCallback(() => {
         isPushToTalkActiveRef.current = false;
+        isUserDoneRef.current = true;
         setActiveSpeaker('other');
         // In Live mode, we want to keep listening to the partner automatically
         if (sessionMode !== 'live') {

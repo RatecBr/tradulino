@@ -14,7 +14,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     try {
-        const { audio, mimeType } = req.body; // Expecting base64 string
+        const { audio, mimeType, context } = req.body; // Expecting base64 string
         if (!audio) {
             return res.status(400).json({ error: 'No audio data provided' });
         }
@@ -34,7 +34,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         formData.append('file', buffer, { filename, contentType: safeMimeType });
         formData.append('model', 'whisper-1');
         formData.append('language', 'en'); 
-        formData.append('prompt', 'This is a conversation in English. If you hear silence or background noise, do not transcribe anything. Ignore phrases like "Thank you for watching" or video subtitles.');
+        
+        const basePrompt = 'This is a conversation in English. If you hear silence or background noise, do not transcribe anything. Ignore phrases like "Thank you for watching" or video subtitles.';
+        const finalPrompt = context ? `${basePrompt} Context: ${context}` : basePrompt;
+        formData.append('prompt', finalPrompt);
 
         // Call Whisper API
         const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {

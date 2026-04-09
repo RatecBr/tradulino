@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from "react";
-import { Home } from "lucide-react";
+import { Home, Mic } from "lucide-react";
 import { useSpeechRecognition } from "./hooks/useSpeechRecognition";
 import { useTranslation } from "./hooks/useTranslation";
 import { useAIResponse } from "./hooks/useAIResponse";
@@ -126,6 +126,11 @@ function App() {
             setTimeout(() => {
               addUtterance("Hello! I am Lino, your conversation coach. Ready to practice English?", "other");
             }, 800);
+          }
+          if (selectedMode === "live") {
+            setTimeout(() => {
+              startListening();
+            }, 500);
           }
         }}
       />
@@ -288,6 +293,23 @@ function App() {
                 )}
               >
                 FALAR
+              </button>
+            )}
+
+            {/* Mic Toggle for Live Mode */}
+            {appMode === "live" && (
+              <button
+                onClick={isListening ? stopListening : startListening}
+                className={cn(
+                  "fixed bottom-6 right-6 z-50 md:absolute md:bottom-8 md:right-8",
+                  "flex items-center justify-center w-12 h-12 rounded-full border shadow-lg transition-all",
+                  isListening
+                    ? "bg-rose-500/20 border-rose-500/50 text-rose-400 hover:bg-rose-500/30 animate-pulse"
+                    : "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-white"
+                )}
+                title={isListening ? "Desligar Microfone" : "Ligar Microfone"}
+              >
+                <Mic className="w-5 h-5" />
               </button>
             )}
 
